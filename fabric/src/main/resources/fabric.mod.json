@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${mod_version}",
+  "name": "${mod_name}",
+  "description": "TODO one-paragraph description (this text is what Modrinth and CurseForge show).",
+  "authors": ["${mod_author}"],
+  "contact": {
+    "homepage": "https://github.com/BackupBackupFede/${mod_repo}",
+    "issues": "https://github.com/BackupBackupFede/${mod_repo}/issues"
+  },
+  "license": "${mod_license}",
+  "icon": "icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["net.emeraude.fairsleep.fabric.FairSleepFabric"]
+  },
+  "mixins": ["${mod_id}.mixins.json"],
+  "depends": {
+    "minecraft": "${fabric_mc_dep}",
+    "fabricloader": ">=0.16"${fabric_api_dep}
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.emeraude.fairsleep.mixin",
+  "compatibilityLevel": "${mixin_compat}",
+  "mixins": [
+    "DedicatedServerMixin"
+  ],
+  "client": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
