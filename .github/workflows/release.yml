@@ -5,8 +5,8 @@ name: Release
 # Release carrying every jar.
 #
 # DORMANT until configured (a platform is skipped when its token is absent):
-#   Variables: MODRINTH_ID, CURSEFORGE_ID
-#   Secrets:   MODRINTH_TOKEN, CURSEFORGE_TOKEN
+#   Variables: MODRINTH_ID, CURSE_ID
+#   Secrets:   MODRINTH_TOKEN, CURSE_TOKEN
 #
 # Release flow: bump mod_version in gradle.properties, then
 #   git tag v0.1.0 && git push --tags
@@ -149,8 +149,8 @@ jobs:
         env:
           MR_ID: ${{ vars.MODRINTH_ID }}
           MR_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
-          CF_ID: ${{ vars.CURSEFORGE_ID }}
-          CF_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          CF_ID: ${{ vars.CURSE_ID }}
+          CF_TOKEN: ${{ secrets.CURSE_TOKEN }}
         run: |
           fail=0
           for p in MR CF; do
@@ -178,8 +178,8 @@ jobs:
         with:
           modrinth-id: ${{ vars.MODRINTH_ID }}
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
-          curseforge-id: ${{ vars.CURSEFORGE_ID }}
-          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          curseforge-id: ${{ vars.CURSE_ID }}
+          curseforge-token: ${{ secrets.CURSE_TOKEN }}
           files: dist/${{ matrix.loader }}/build/libs/*.jar
           version: ${{ steps.ver.outputs.number }}
           name: ${{ steps.ver.outputs.number }}

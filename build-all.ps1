@@ -16,6 +16,8 @@ param([switch]$Clean)
 
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
+# gradlew works on the CURRENT directory: run from anywhere, build this project.
+Set-Location $root
 
 $versions = Select-String -Path (Join-Path $root 'build.gradle') -Pattern '^\s*"([0-9][^"]*)"\s*:\s*\[' -AllMatches |
     ForEach-Object { $_.Matches } | ForEach-Object { $_.Groups[1].Value }

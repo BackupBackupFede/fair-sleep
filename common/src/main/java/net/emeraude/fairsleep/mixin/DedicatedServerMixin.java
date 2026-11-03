@@ -8,14 +8,14 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Runs the self-test once the dedicated server's levels exist. No-op unless requested. */
+/** Prepares the self-test once the dedicated server's levels exist. No-op unless requested. */
 @Mixin(DedicatedServer.class)
 public abstract class DedicatedServerMixin {
 
     @Inject(method = "initServer", at = @At("RETURN"))
     private void fairsleep$selfTest(CallbackInfoReturnable<Boolean> cir) {
         if (cir.getReturnValueZ() && FairSleepSelfTest.requested()) {
-            FairSleepSelfTest.run((MinecraftServer) (Object) this);
+            FairSleepSelfTest.start((MinecraftServer) (Object) this);
         }
     }
 }

@@ -12,7 +12,7 @@ authors = "${mod_author}"
 credits = "Support: https://ko-fi.com/acesoverdeuces777"
 displayURL = "https://github.com/BackupBackupFede/${mod_repo}"
 description = '''
-TODO description.
+Monsters nearby no longer stop you from sleeping: click the bed at night and you sleep, whatever is lurking behind your wall. Two switches in a settings chest (/fairsleep settings): whether monsters may attack a sleeping player, and whether beds work by day (sleeping by day brings the night). Server-side only: no client install, no dependency.
 
 Support: https://ko-fi.com/acesoverdeuces777
 '''

@@ -1,130 +1,82 @@
-# Multiloader mod template — NeoForge + Fabric, 1.21.1 + 26.2 + 26.3
+# Fair Sleep — sleep even with monsters nearby
 
-One repository, two loaders, three Minecraft versions, three publishing platforms.
-Every configuration in here has been built and verified, not just written.
+**Monsters nearby no longer stop you from sleeping.**
 
-> Reconstructed on 2026-10-28 after the PC reset: the original template only lived on this disk.
-> Source: the first commit of `emerald-reserve` (the template's raw output, README included),
-> plus what later mods added to the shared files (`common/build.gradle`, `selftest.ps1`,
-> `release.yml`, taken from `fair-death`). `new-mod.ps1` was rewritten.
+*"You may not rest now; there are monsters nearby."* Not any more. Click the bed at night and you
+sleep, whatever is lurking in the cave under your floor or behind your wall.
 
-## Clone it
+Nothing to install on the client. Fabric and NeoForge, Minecraft 1.21.1, 26.2 and 26.3.
+No dependencies.
 
-```powershell
-.\new-mod.ps1 -ModId cooltweak -ModName "Cool Tweak" -Destination ..\cool-tweak          # Tier B/C
-.\new-mod.ps1 -ModId cooltweak -ModName "Cool Tweak" -Destination ..\cool-tweak -Tier A  # server only
-```
+## The rule
 
-Then edit the `TODO` descriptions in `fabric.mod.json` and `neoforge.mods.toml`.
+The monster check is the only thing removed. Everything else stays vanilla:
 
-## Test
+- you sleep at night only (or during a thunderstorm), unless the "Sleep by day" switch is on, in a
+  dimension where beds work;
+- the bed must be close enough and not obstructed.
 
-- `.\selftest.ps1` — starts a real dedicated server per loader x Minecraft line, runs
-  `FairSleepSelfTest` on a fake player, prints PASS/FAIL and stops. The only cheap proof a mixin
-  still applies: Mixin resolves its targets at runtime, so compiling proves nothing.
-  **Replace the example check** with what your mod does, and add a *witness* (the same check with
-  the feature off must fail, or it measures nothing).
-- `.\build-all.ps1` — builds every line and lists class counts per jar (they must match).
-- Plain-Java logic goes under `.../core/` with JUnit tests in `common/src/test`; the build fails if
-  `core/` imports Minecraft.
-- Calls whose shape differs between 1.21.1 and 26.x go in a `compat/Compat.java` written twice,
-  once in `java-legacy/` and once in `java-modern/`; only one folder is compiled.
+Every sleeping block that goes through vanilla's bed check is covered, including those of other
+mods that use it.
 
-## Build
+## Two switches
 
-```bash
-./gradlew build                            # the default line (minecraft_version in gradle.properties)
-./gradlew build -Pminecraft_version=1.21.1 # any other line of the MATRIX
-```
+`/fairsleep settings` (operators) opens a chest with two switches, like every Fair mod. Click an
+icon or the pane under it.
 
-Jars land in `fabric/build/libs/` and `neoforge/build/libs/`, named
-`<mod_id>-<loader>-<mcversion>-<modversion>.jar`, so all four coexist.
+**Monsters attack sleepers** (zombie head):
 
-Requires JDK 25 for the Gradle process itself (Gradle 9.5 + Loom), even when building 1.21.1,
-whose *toolchain* is Java 21 — the foojay resolver downloads that one automatically.
+- **green, Allowed** (default): as in vanilla, a monster that reaches you can hit you and wake you
+  up;
+- **red, Not allowed**: monsters do not target a sleeping player, and the ones already after you
+  give up when you fall asleep. Awake again, you are fair game.
 
-```powershell
-$env:JAVA_HOME = 'C:\path\to\jdk-25'
-```
+**Sleep by day** (clock):
 
-## Adding a Minecraft version
+- **red, Off** (default): beds work at night only, as in vanilla;
+- **green, On**: beds work by day too, and sleeping by day brings the night (time jumps to
+  nightfall, 13000). Sleeping at night still brings the morning. Beds that never work (in the
+  Nether, the End) still explode.
 
-**One file.** Add a row to `MATRIX` in `build.gradle` — CI reads that list straight out of the
-file, so there is nothing else to keep in sync.
+Shift-click, number keys and dropping do nothing; nothing leaves the chest.
 
-## The three tiers
+## Commands
 
-Pick one deliberately per mod; it decides the porting cost, not the market.
+| Command | |
+|---|---|
+| `/fairsleep settings` | the settings chest (operators) |
+| `/fairsleep reload` | reload the config (operators) |
 
-| Tier | Content | Port cost 1.21.1 <-> 26.2 |
-|------|---------|---------------------------|
-| **A — server only** | mechanics, worldgen, biomes, structures, enchantments, loot, commands | ~nil, often the same source recompiled |
-| **B — both sides** | blocks, items, entities | 2-3x, concentrated in rendering |
-| **C — client only** | perf, QoL, HUD | highest, but the Fabric audience is huge |
+## Config
 
-Default to A when the mod allows it. Only static registries (blocks, items, entities, block
-entities, fluids, effects) force a client install; data-driven registries (biomes, structures,
-dimensions, enchantments, recipes, loot, damage types) are sent by the server and work against a
-vanilla client.
+`config/fairsleep.json`, also written by the settings chest:
 
-**Making it Tier A:** `new-mod.ps1 -Tier A`, or by hand: delete `common/.../client/`,
-`FairSleepFabricClient`, `FairSleepNeoForgeClient`, and the `"client"` entrypoint in
-`fabric.mod.json`. Declare `client_side: unsupported` on Modrinth — server admins filter on it.
+| Key | Default | |
+|---|---|---|
+| `aggroAllowed` | `true` | monsters may attack a sleeping player |
+| `daySleep` | `false` | beds work by day, and a day sleep brings the night |
 
-## Fabric API
+## Building
 
-**Off by default** (`use_fabric_api=false` in `gradle.properties`). On 1.21.1 with Mojang
-mappings, Fabric API's own resource-loader mixin crashes a Fabric server at the first chunk — and
-the build stays green. Turn it on only when the mod needs it, and run a 1.21.1 server before
-believing it works.
-
-When it is needed: Fabric Loader on its own neither unfreezes the vanilla registries before
-`onInitialize` nor mounts a mod's `assets/` as a resource pack — the second failure is silent, and
-shows up in game as missing textures and raw translation keys. Any mod that ships a texture, a
-lang file or a static registry entry needs it.
-
-Watch `Reloading ResourceManager:` in the log: it must name your mod. `vanilla` alone means none
-of your resources were loaded.
-
-## Publishing
-
-`release.yml` publishes to Modrinth + CurseForge + GitHub Releases when a tag is pushed. It stays
-dormant until configured; each platform is skipped when its token is missing.
-
-- Repo **variables**: `MODRINTH_ID`, `CURSEFORGE_ID`
-- Repo **secrets**: `MODRINTH_TOKEN`, `CURSEFORGE_TOKEN`
+The Gradle process needs JDK 25, even for the 1.21.1 line (its toolchain, Java 21, is downloaded
+automatically).
 
 ```bash
-git tag v0.1.0 && git push --tags
+./gradlew build                             # default line
+./gradlew build -Pminecraft_version=1.21.1  # any line of MATRIX in build.gradle
 ```
 
-One version is published **per Minecraft version per loader**, numbered `1.0.0+1.21.1-fabric`.
-A Modrinth version has ONE primary file, and every loader it declares must be satisfied by that
-file: a Fabric jar and a NeoForge jar cannot share a version (`400 invalid_input: No
-fabric.mod.json present for Fabric file`). The tag must match `mod_version`, or nothing runs. The
-GitHub release is a separate job so that it happens exactly once, with every jar attached.
+Jars land in `fabric/build/libs/` and `neoforge/build/libs/`.
 
-`release.yml` only runs at tag time, so its bugs stay invisible until the release you care about.
-Read it before the first tag of a new project, and watch the run: a platform whose token is missing
-is skipped **silently**, and the job still goes green.
+`.\selftest.ps1` starts a real server per loader and Minecraft line, puts a zombie and a skeleton
+right beside a bed, and checks that the player sleeps. The witness replays the scene with the mod
+switched off, where vanilla must refuse sleep. It also clicks through the settings chest, and with
+aggro off checks that the zombie drops the sleeper and the skeleton cannot pick them; its witness,
+aggro allowed, must keep the sleeper as a target. By day, with the day-sleep switch off the bed
+must refuse (witness), and with it on the player must fall asleep and stay asleep through their own
+ticks, until the switch goes off again. The jump to nightfall is covered by JUnit
+(`SleepTimeTest`) and by the mixin, which a server refuses to start without; check it in game.
 
-## Gotchas worth keeping
+## License
 
-- **Loom has two plugin IDs.** `net.fabricmc.fabric-loom` is `LoomNoRemapGradlePlugin`: it sets
-  `disableObfuscation = true` *and finalizes it*, so `officialMojangMappings()` then throws
-  "Cannot use Mojang mappings in a non-obfuscated environment" — and no Gradle property can undo
-  it. Obfuscated Minecraft (1.21.x) needs the classic `fabric-loom` ID. One Loom version serves
-  both eras; see the comment in `fabric/build.gradle`.
-- **26.x ships de-obfuscated.** No `mappings` line, and `implementation` rather than
-  `modImplementation` for fabric-loader — there is nothing to remap.
-- **Gradle 9 breaks `expand(project.properties)`.** Filter to string values first (done in
-  `build.gradle`), or the build fails fingerprinting `allprojects`.
-- **`modImplementation` does not exist under the no-remap plugin** either, so 26.x declares Fabric
-  API with plain `implementation`. The error names a missing method on `DefaultDependencyHandler`
-  and never mentions the plugin.
-- **`pack.mcmeta` is mandatory** as soon as the mod ships `assets/` or `data/`. Without it NeoForge
-  mounts the pack and reads nothing from it, with no error. Its `pack_format` is per MC version and
-  lives in `MATRIX`.
-- **`ResourceLocation` became `Identifier` in 26.x.** Never name that type in shared code; the
-  `Registry.register(reg, "ns:path", value)` String overload is identical across every version.
-- **First build of a new MC version takes 2-15 min** (Minecraft gets decompiled), then seconds.
+MIT

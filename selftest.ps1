@@ -35,24 +35,31 @@ if (-not $Versions) {
 $envName = ($ModId.ToUpper() -replace '[^A-Z0-9]', '') + '_SELFTEST'
 Write-Host "Self-test: $($Loaders -join ', ') x $($Versions -join ', ')  (env $envName)" -ForegroundColor Cyan
 
-# Rewrites level-name in server.properties. Read and written as UTF-8 WITHOUT a BOM, line by line:
+# Sets keys in server.properties. Read and written as UTF-8 WITHOUT a BOM, line by line:
 # PowerShell 5.1's Get-Content / Set-Content -Encoding utf8 added a BOM, read it back as ANSI and
 # re-encoded it, so a garbage line doubled on every run (2 GB after a few dozen runs, then the server
 # ran out of memory before starting). Lines that are neither a comment nor key=value are dropped,
-# which also repairs a file already damaged that way.
-function Set-LevelName([string]$Path, [string]$Name) {
+# which also repairs a file already damaged that way. A missing file is created.
+function Set-ServerProperties([string]$Path, [hashtable]$Values) {
     $keep = New-Object System.Collections.Generic.List[string]
-    $reader = New-Object System.IO.StreamReader($Path, [System.Text.Encoding]::UTF8)
-    try {
-        while ($null -ne ($line = $reader.ReadLine())) {
-            if ($line.Length -gt 1000 -or $line -notmatch '^(#.*|[a-z0-9.-]+=.*)$') { continue }
-            if ($line -match '^level-name=') { $line = "level-name=$Name" }
-            $keep.Add($line)
-        }
-    } finally { $reader.Dispose() }
-    if (-not ($keep | Where-Object { $_ -match '^level-name=' })) { $keep.Add("level-name=$Name") }
+    if (Test-Path $Path) {
+        $reader = New-Object System.IO.StreamReader($Path, [System.Text.Encoding]::UTF8)
+        try {
+            while ($null -ne ($line = $reader.ReadLine())) {
+                if ($line.Length -gt 1000 -or $line -notmatch '^(#.*|[a-z0-9.-]+=.*)$') { continue }
+                $key = $line.Split('=')[0]
+                if ($Values.ContainsKey($key)) { continue }
+                $keep.Add($line)
+            }
+        } finally { $reader.Dispose() }
+    }
+    foreach ($key in $Values.Keys) { $keep.Add("$key=$($Values[$key])") }
     [System.IO.File]::WriteAllLines($Path, $keep, (New-Object System.Text.UTF8Encoding($false)))
 }
+
+# Not 25565: a test server of your own (to play the mod for real) may already hold it, and the
+# self-test server would then die on "FAILED TO BIND TO PORT" before the check runs.
+$selfTestPort = 25599
 
 $failed = $false
 foreach ($version in $Versions) {
@@ -63,9 +70,7 @@ foreach ($version in $Versions) {
         if (-not (Test-Path $runDir)) { New-Item -ItemType Directory -Path $runDir | Out-Null }
         $eula = Join-Path $runDir 'eula.txt'
         if (-not (Test-Path $eula)) { Set-Content -Path $eula -Value 'eula=true' -Encoding ascii }
-        if (Test-Path $props) {
-            Set-LevelName $props "world-$version"
-        }
+        Set-ServerProperties $props @{ 'level-name' = "world-$version"; 'server-port' = $selfTestPort }
 
         $log = Join-Path $env:TEMP "selftest-$ModId-$loader-$version.log"
         [Environment]::SetEnvironmentVariable($envName, 'true')

@@ -3,7 +3,7 @@
   "id": "${mod_id}",
   "version": "${mod_version}",
   "name": "${mod_name}",
-  "description": "TODO one-paragraph description (this text is what Modrinth and CurseForge show).",
+  "description": "Monsters nearby no longer stop you from sleeping: click the bed at night and you sleep, whatever is lurking behind your wall. Two switches in a settings chest (/fairsleep settings): whether monsters may attack a sleeping player, and whether beds work by day (sleeping by day brings the night). Server-side only: no client install, no dependency.",
   "authors": ["${mod_author}"],
   "contact": {
     "homepage": "https://github.com/BackupBackupFede/${mod_repo}",
